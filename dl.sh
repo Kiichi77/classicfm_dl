@@ -139,6 +139,7 @@ for (( i=1; i<=$TIMES; i++)); do
     else
         ffmpeg  -i $FILENAME.m4 -metadata comment="$COMMENT" -c copy $FILENAME.m4a
     rm -f $FILENAME.m4
+    fi
 done
 
 ls -la *.m4a
