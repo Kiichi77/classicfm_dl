@@ -138,7 +138,7 @@ for (( i=1; i<=$TIMES; i++)); do
         ./ffmpeg*/ffmpeg  -i $FILENAME.m4 -metadata comment="$COMMENT" -c copy $FILENAME.m4a
     else
         ffmpeg  -i $FILENAME.m4 -metadata comment="$COMMENT" -c copy $FILENAME.m4a
-    rm -f $FILENAME.m4
+        rm -f $FILENAME.m4
     fi
 done
 
