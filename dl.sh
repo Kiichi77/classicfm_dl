@@ -38,8 +38,11 @@ if ! command -v jq &> /dev/null; then
 else
     echo "We have jq, moving on."
 fi
-
-cat out.html | awk -F'<script id="__NEXT_DATA__" type="application/json">' '{ print $2 }'| awk -F'</script>' '{ print $1 }'| awk 'NF'| ./jq '.props.pageProps.catchupInfo.episodes[] '> out.json
+if ! command -v jq &> /dev/null; then
+    cat out.html | awk -F'<script id="__NEXT_DATA__" type="application/json">' '{ print $2 }'| awk -F'</script>' '{ print $1 }'| awk 'NF'| ./jq '.props.pageProps.catchupInfo.episodes[] '> out.json
+else
+    cat out.html | awk -F'<script id="__NEXT_DATA__" type="application/json">' '{ print $2 }'| awk -F'</script>' '{ print $1 }'| awk 'NF'| jq '.props.pageProps.catchupInfo.episodes[] '> out.json
+fi
 
 DATA=$(cat out.json)
 
@@ -49,44 +52,65 @@ fi
 if [[ -f date.txt ]]; then
     rm -f date.txt
 fi
-
-#cat out.json | jq '.startDate' | cut -d'T' -f 1 > startDate.txt
-
-for row in $(echo "${DATA}" | jq -r '. | @base64'); do
-    _jq(){
-        echo ${row} | base64 --decode | jq -r ${1}
-    }
-    echo $(_jq '.startDate')
-done | cut -d'T' -f 1 > startDate.txt
-
-while read line; do
-    date -d "$line+1day" +%Y-%m-%d
-done < startDate.txt > date.txt
-
-
 if [[ -f streamUrl.txt ]]; then
     rm -f streamUrl.txt
 fi
-
-for row in $(echo "${DATA}" | jq -r '. | @base64'); do
-    _jq(){
-        echo ${row} | base64 --decode | jq -r ${1}
-    }
-    echo $(_jq '.streamUrl')
-done > streamUrl.txt
-
-
 if [[ -f description.txt ]]; then
     rm -f description.txt
 fi
 
-for row in $(echo "${DATA}" | jq -r '. | @base64'); do
-    _jq(){
-        echo ${row} | base64 --decode | jq -r ${1}
-    }
-    echo $(_jq '.description')
-done | sed s/\"//g > description.txt
+#cat out.json | jq '.startDate' | cut -d'T' -f 1 > startDate.txt
+if ! command -v jq &> /dev/null; then
+    for row in $(echo "${DATA}" | ./jq -r '. | @base64'); do
+        _jq(){
+            echo ${row} | base64 --decode | ./jq -r ${1}
+        }
+        echo $(_jq '.startDate')
+    done | cut -d'T' -f 1 > startDate.txt
 
+    while read line; do
+        date -d "$line+1day" +%Y-%m-%d
+    done < startDate.txt > date.txt
+
+    for row in $(echo "${DATA}" | ./jq -r '. | @base64'); do
+        _jq(){
+            echo ${row} | base64 --decode | ./jq -r ${1}
+        }
+        echo $(_jq '.streamUrl')
+    done > streamUrl.txt
+
+    for row in $(echo "${DATA}" | ./jq -r '. | @base64'); do
+        _jq(){
+            echo ${row} | base64 --decode | ./jq -r ${1}
+        }
+        echo $(_jq '.description')
+    done | sed s/\"//g > description.txt
+else
+    for row in $(echo "${DATA}" | jq -r '. | @base64'); do
+        _jq(){
+            echo ${row} | base64 --decode | jq -r ${1}
+        }
+        echo $(_jq '.startDate')
+    done | cut -d'T' -f 1 > startDate.txt
+
+    while read line; do
+        date -d "$line+1day" +%Y-%m-%d
+    done < startDate.txt > date.txt
+
+    for row in $(echo "${DATA}" | jq -r '. | @base64'); do
+        _jq(){
+            echo ${row} | base64 --decode | jq -r ${1}
+        }
+        echo $(_jq '.streamUrl')
+    done > streamUrl.txt
+
+    for row in $(echo "${DATA}" | jq -r '. | @base64'); do
+        _jq(){
+            echo ${row} | base64 --decode | jq -r ${1}
+        }
+        echo $(_jq '.description')
+    done | sed s/\"//g > description.txt
+fi
 if ! command -v ffmpeg &> /dev/null; then
     echo "ffmpeg is not installed, going to download ffmpeg"
     rm -rf ffmpeg*
@@ -110,7 +134,10 @@ for (( i=1; i<=$TIMES; i++)); do
     COMMENT=$(awk "NR==$i" description.txt)
     URL=$(awk "NR==$i" streamUrl.txt)
     curl -o $FILENAME.m4 -sSL $URL
-    ffmpeg*/ffmpeg  -i $FILENAME.m4 -metadata comment="$COMMENT" -c copy $FILENAME.m4a
+    if ! command -v ffmpeg &> /dev/null; then
+        ./ffmpeg*/ffmpeg  -i $FILENAME.m4 -metadata comment="$COMMENT" -c copy $FILENAME.m4a
+    else
+        ffmpeg  -i $FILENAME.m4 -metadata comment="$COMMENT" -c copy $FILENAME.m4a
     rm -f $FILENAME.m4
 done
 
