@@ -133,7 +133,20 @@ for (( i=1; i<=$TIMES; i++)); do
     echo "Downloading $FILENAME"
     COMMENT=$(awk "NR==$i" description.txt)
     URL=$(awk "NR==$i" streamUrl.txt)
-    curl -o $FILENAME.m4 -sSL $URL
+    curl -o $FILENAME.m4 -sSL $URL \
+      -H 'Connection: keep-alive' \
+      -H 'sec-ch-ua: " Not;A Brand";v="99", "Google Chrome";v="91", "Chromium";v="91"' \
+      -H 'DNT: 1' \
+      -H 'sec-ch-ua-mobile: ?0' \
+      -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' \
+      -H 'Accept: */*' \
+      -H 'Sec-Fetch-Site: cross-site' \
+      -H 'Sec-Fetch-Mode: no-cors' \
+      -H 'Sec-Fetch-Dest: video' \
+      -H 'Referer: https://www.globalplayer.com/catchup/classicfm/uk/46wcDMX/' \
+      -H 'Accept-Language: en-US,en;q=0.9,zh-TW;q=0.8,zh;q=0.7,zh-CN;q=0.6' \
+      -H 'Range: bytes=0-' \
+      --compressed
     if ! command -v ffmpeg &> /dev/null; then
         ./ffmpeg*/ffmpeg  -i $FILENAME.m4 -metadata comment="$COMMENT" -c copy $FILENAME.m4a
     else
